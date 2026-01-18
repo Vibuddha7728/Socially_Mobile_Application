@@ -1,0 +1,62 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:socially_app/utils/util_functions/mood.dart';
+
+class Post {
+  final String postCaption;
+  final Mood mood;
+  final String userId;
+  final String username;
+  final int likes;
+  final String postId;
+  final DateTime datePublished;
+  final String postUrl;
+  final String profImage;
+  final String? reason;
+  final int reportCount; // රිපෝට් ගණන තබා ගැනීමට
+
+  Post({
+    required this.postCaption,
+    required this.mood,
+    required this.userId,
+    required this.username,
+    required this.likes,
+    required this.postId,
+    required this.datePublished,
+    required this.postUrl,
+    required this.profImage,
+    this.reason,
+    this.reportCount = 0, // Default අගය 0 වේ
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'postCaption': postCaption,
+      'mood': mood.name,
+      'userId': userId,
+      'username': username,
+      'likes': likes,
+      'postId': postId,
+      'datePublished': Timestamp.fromDate(datePublished),
+      'postUrl': postUrl,
+      'profImage': profImage,
+      'reason': reason,
+      'reportCount': reportCount,
+    };
+  }
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      postCaption: json['postCaption'] ?? '',
+      mood: MoodExtension.fromString(json['mood'] ?? 'happy'),
+      userId: json['userId'] ?? '',
+      username: json['username'] ?? '',
+      likes: json['likes'] ?? 0,
+      postId: json['postId'] ?? '',
+      datePublished: (json['datePublished'] as Timestamp).toDate(),
+      postUrl: json['postUrl'] ?? '',
+      profImage: json['profImage'] ?? '',
+      reason: json['reason'],
+      reportCount: json['reportCount'] ?? 0,
+    );
+  }
+}
