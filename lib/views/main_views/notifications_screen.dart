@@ -30,7 +30,6 @@ class NotificationScreen extends StatelessWidget {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // පින්තූරයේ පෙනෙන පරිදි users -> uid -> notifications පථය භාවිතා කර ඇත
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(currentUserId)
@@ -57,8 +56,8 @@ class NotificationScreen extends StatelessWidget {
             itemCount: snapshot.data!.docs.length,
             padding: const EdgeInsets.all(15),
             itemBuilder: (context, index) {
-              var data =
-                  snapshot.data!.docs[index].data() as Map<String, dynamic>;
+              var doc = snapshot.data!.docs[index];
+              var data = doc.data() as Map<String, dynamic>;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -82,6 +81,48 @@ class NotificationScreen extends StatelessWidget {
                   subtitle: Text(
                     data['message'] ?? "",
                     style: GoogleFonts.lexend(color: Colors.white70),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () async {
+                      // Confirm deletion
+                      bool confirm = await showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: const Color(0xFF1C1B22),
+                          title: const Text(
+                            "Delete Notification",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: const Text(
+                            "Are you sure you want to delete this notification?",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text(
+                                "Delete",
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm) {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(currentUserId)
+                            .collection('notifications')
+                            .doc(doc.id)
+                            .delete();
+                      }
+                    },
                   ),
                 ),
               );

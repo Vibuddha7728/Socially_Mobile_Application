@@ -1,45 +1,41 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // අලුතින් එක් කළා
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:socially_app/firebase_options.dart';
 import 'package:socially_app/router/router.dart';
 import 'package:socially_app/utils/constants/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:socially_app/services/notification/notification_service.dart';
 
-// බැක්ග්‍රවුන්ඩ් එකේදී මැසේජ් එකක් ආවොත් හැසිරවිය යුතු ආකාරය
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+/// 🔹 Background / terminated notification handler (MUST be top-level)
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('Background message: ${message.messageId}');
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔹 Initialize Firebase (Firestore, Auth, etc.)
+  // 1️⃣ Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // 🔹 Push Notifications සඳහා අවශ්‍ය සේවාවන් ආරම්භ කිරීම
+  // 2️⃣ Register background handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // 3️⃣ Initialize notification service
+  await NotificationService().initNotification();
+
+  // 4️⃣ Firebase Messaging setup
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  // නොටිෆිකේෂන් පෙන්වීමට අවසර ඉල්ලීම (iPhone සහ අලුත් Android ෆෝන් සඳහා)
-  await messaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
+  // Request permission (safe even if already requested)
+  await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-  // ඇඩ්මින් පැනල් එකෙන් යවන පණිවුඩ ලැබීමට "all_users" කියන Topic එකට සම්බන්ධ වීම
+  // Subscribe users to admin topic
   await messaging.subscribeToTopic('all_users');
 
-  // ඇප් එක වහලා තියෙද්දි පණිවුඩ ලැබීම පාලනය කිරීම
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // 🔹 Initialize Supabase (Storage only)
+  // 5️⃣ Initialize Supabase
   await Supabase.initialize(
     url: 'https://zehebtzxoubajakcbpkj.supabase.co',
     anonKey:
@@ -60,7 +56,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: GoogleFonts.poppins().fontFamily,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212), // optional dark bg
+        scaffoldBackgroundColor: const Color(0xFF121212),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.transparent,
           selectedItemColor: mainOrangeColor,
