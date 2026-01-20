@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart'; // අත්‍යවශ්‍යයි
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +43,6 @@ class _CreateScreenState extends State<CreateScreen> {
         final user = FirebaseAuth.instance.currentUser;
 
         if (user != null) {
-          // --- SECURITY CHECK: පෝස්ට් එක දාන්න කලින් බ්ලොක් ද බලන්න ---
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
@@ -61,7 +60,7 @@ class _CreateScreenState extends State<CreateScreen> {
               ),
             );
             setState(() => _isUploading = false);
-            return; // මෙතනින් නවතිනවා, පෝස්ට් එක සේව් වෙන්නේ නැහැ
+            return;
           }
 
           final userDetails = await UserService().getUserById(user.uid);
@@ -101,50 +100,71 @@ class _CreateScreenState extends State<CreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF121016);
+    // 🌓 Theme එක පරීක්ෂා කිරීම
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const gradientColors = [Color(0xFFBC1EAA), Color(0xFFF13D3D)];
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        brightness: Brightness.dark,
-        primaryColor: Colors.white,
-        scaffoldBackgroundColor: bgColor,
-      ),
-      child: Scaffold(
-        backgroundColor: bgColor,
-        appBar: AppBar(
-          title: const Text(
-            'Create Post',
-            style: TextStyle(color: Colors.white),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Create Post',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ReusableInput(
-                    controller: _captionController,
-                    labelText: 'Caption',
-                    icon: Icons.text_fields,
-                    obscureText: false,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? 'Please enter a caption'
-                        : null,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ✅ නිවැරදි කරන ලද Caption Input එක
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    // මෙහිදී ReusableInput එක ඇතුළේ ඇති TextField එකේ වර්ණ override කරනු ලබයි
+                    primaryColor: isDark ? Colors.white : Colors.black,
+                    hintColor: isDark ? Colors.white54 : Colors.black54,
+                    textTheme: Theme.of(context).textTheme.copyWith(
+                      // Type කරන අකුරු වල පාට මාරු කිරීම
+                      titleMedium: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _buildMoodDropdown(),
-                  const SizedBox(height: 16),
-                  _buildImagePreview(),
-                  const SizedBox(height: 24),
-                  _buildActionButtons(gradientColors),
-                ],
-              ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      // Light mode එකේදී අළු පැහැති පසුබිමක් ලබා දී ඇත
+                      color: isDark
+                          ? const Color(0xFF2A282F)
+                          : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ReusableInput(
+                      controller: _captionController,
+                      labelText: 'Caption',
+                      icon: Icons.text_fields,
+                      obscureText: false,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'Please enter a caption'
+                          : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildMoodDropdown(isDark),
+                const SizedBox(height: 16),
+                _buildImagePreview(isDark),
+                const SizedBox(height: 24),
+                _buildActionButtons(gradientColors),
+              ],
             ),
           ),
         ),
@@ -152,27 +172,39 @@ class _CreateScreenState extends State<CreateScreen> {
     );
   }
 
-  // Helper widgets for clean code
-  Widget _buildMoodDropdown() {
-    return Theme(
-      data: Theme.of(context).copyWith(canvasColor: const Color(0xFF2A282F)),
-      child: DropdownButton<Mood>(
-        value: _selectedMood,
-        style: const TextStyle(color: Colors.white, fontSize: 18),
-        onChanged: (newMood) => setState(() => _selectedMood = newMood!),
-        items: Mood.values
-            .map(
-              (mood) => DropdownMenuItem(
-                value: mood,
-                child: Text('${mood.name} ${mood.emoji}'),
-              ),
-            )
-            .toList(),
+  Widget _buildMoodDropdown(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A282F) : Colors.grey[200],
+        borderRadius: BorderRadius.circular(10),
+        border: isDark ? null : Border.all(color: Colors.grey[300]!),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<Mood>(
+          value: _selectedMood,
+          isExpanded: true,
+          dropdownColor: isDark ? const Color(0xFF2A282F) : Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black,
+            fontSize: 18,
+          ),
+          iconEnabledColor: isDark ? Colors.white : Colors.black,
+          onChanged: (newMood) => setState(() => _selectedMood = newMood!),
+          items: Mood.values
+              .map(
+                (mood) => DropdownMenuItem(
+                  value: mood,
+                  child: Text('${mood.name} ${mood.emoji}'),
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
 
-  Widget _buildImagePreview() {
+  Widget _buildImagePreview(bool isDark) {
     return _imageFile != null
         ? ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -183,9 +215,12 @@ class _CreateScreenState extends State<CreateScreen> {
               fit: BoxFit.cover,
             ),
           )
-        : const Text(
+        : Text(
             'No image selected',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontSize: 16,
+            ),
           );
   }
 

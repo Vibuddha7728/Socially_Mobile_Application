@@ -10,17 +10,29 @@ class ReelsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🌓 Theme එක Dark ද නැද්ද යන්න පරීක්ෂා කිරීම (අකුරු වල වර්ණ පාලනයට)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      // Background color එක app theme එකට ගැලපෙන සේ කළු පැහැයට සමීප කර ඇත
-      backgroundColor: const Color(0xFF050505),
+      // 🔹 මෙහි තිබූ fixed background color එක අයින් කළා.
+      // දැන් මෙය main.dart එකේ theme එකට අනුව ඉබේම මාරු වේ.
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Reels',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+            // 🌓 පසුබිම අනුව අකුරු වල වර්ණය වෙනස් වීම
+            color: isDark ? Colors.white : Colors.black,
+          ),
         ),
         centerTitle: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // AppBar එකේ icons වල වර්ණය වෙනස් කිරීම
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: ReelService().getReels(),
@@ -38,13 +50,16 @@ class ReelsScreen extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.video_library_outlined,
-                    color: Colors.white24,
+                    color: isDark ? Colors.white24 : Colors.black26,
                     size: 80,
                   ),
                   const SizedBox(height: 15),
-                  const Text(
+                  Text(
                     'No reels available',
-                    style: TextStyle(color: Colors.white38, fontSize: 16),
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.black38,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -56,7 +71,6 @@ class ReelsScreen extends StatelessWidget {
               .toList();
 
           return ListView.builder(
-            // පිරිසිදු පෙනුමක් සඳහා padding එක් කර ඇත
             padding: const EdgeInsets.symmetric(vertical: 10),
             physics: const BouncingScrollPhysics(),
             itemCount: reels.length,
@@ -97,10 +111,9 @@ class ReelsScreen extends StatelessWidget {
   void _showAddReelModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Full screen height එක පාලනය කිරීමට
-      backgroundColor:
-          Colors.transparent, // Glass effect එක සඳහා transparent කළ යුතුය
-      barrierColor: Colors.black54, // පසූබිම අඳුරු කිරීමට
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (context) => const AddReelModal(),
     );
   }

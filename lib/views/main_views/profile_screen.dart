@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore සඳහා එක් කළා
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart'; // 🔹 එකතු කරන ලදී
 import 'package:socially_app/models/user_model.dart';
 import 'package:socially_app/services/auth/auth_service.dart';
 import 'package:socially_app/services/feed/feed_service.dart';
@@ -9,6 +10,7 @@ import 'package:socially_app/widgets/reusable/custom_button.dart';
 import 'package:socially_app/admin/services/admin_service.dart';
 import 'package:socially_app/admin/screens/admin_dashboard.dart';
 import 'package:socially_app/views/main_views/notifications_screen.dart';
+import 'package:socially_app/providers/theme_provider.dart'; // 🔹 එකතු කරන ලදී
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -87,21 +89,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔹 ThemeProvider එක ලබා ගැනීම
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0E13),
+      // 🌓 තේමාව අනුව පසුබිම් වර්ණය වෙනස් වේ
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
-            color: Colors.white,
+            color: isDark ? Colors.white : Colors.black,
             fontSize: 22,
             fontWeight: FontWeight.w500,
           ),
         ),
         actions: [
-          // --- Animated Notification Bell with Badge ---
+          // Notification Bell
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
@@ -118,9 +125,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.notifications_none_rounded,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                       size: 28,
                     ),
                     onPressed: () => Navigator.push(
@@ -137,8 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: TweenAnimationBuilder<double>(
                         duration: const Duration(milliseconds: 400),
                         tween: Tween(begin: 0.0, end: 1.0),
-                        curve: Curves
-                            .elasticOut, // පොඩි ගැස්සීමක් (Bounce) සහිතව මතුවීමට
+                        curve: Curves.elasticOut,
                         builder: (context, value, child) {
                           return Transform.scale(
                             scale: value,
@@ -148,7 +154,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.redAccent,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFF0F0E13),
+                                  color: isDark
+                                      ? const Color(0xFF0F0E13)
+                                      : Colors.white,
                                   width: 1.5,
                                 ),
                               ),
@@ -174,24 +182,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
           ),
+
+          // 🌓 Theme Switch Button (Settings Icon එක වෙනුවට හෝ එය සමඟ)
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {},
+            icon: Icon(
+              isDark ? Icons.light_mode : Icons.dark_mode,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            onPressed: () {
+              themeProvider.toggleTheme();
+            },
           ),
         ],
       ),
       body: FutureBuilder<UserModel?>(
         future: _userFuture,
         builder: (context, snapshot) {
-          if (_isLoading)
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+          if (_isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: isDark ? Colors.white : Colors.orange,
+              ),
             );
+          }
           if (_hasError || !snapshot.hasData) {
-            return const Center(
+            return Center(
               child: Text(
                 'User not found',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
               ),
             );
           }
@@ -202,14 +220,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                _buildProfileImage(user.imageUrl),
+                _buildProfileImage(user.imageUrl, isDark),
                 const SizedBox(height: 20),
                 Text(
                   user.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
                 Text(
@@ -217,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: const TextStyle(fontSize: 15, color: Colors.grey),
                 ),
                 const SizedBox(height: 25),
-                _buildStatsSection(),
+                _buildStatsSection(isDark),
                 const SizedBox(height: 30),
                 _buildActionButtons(user),
               ],
@@ -228,16 +246,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // UI කොටස් පහසුව සඳහා වෙනම Method ලෙස වෙන් කළා
-  Widget _buildProfileImage(String url) {
+  Widget _buildProfileImage(String url, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white10, width: 2),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black12,
+          width: 2,
+        ),
       ),
       child: CircleAvatar(
         radius: 65,
-        backgroundColor: Colors.grey[900],
+        backgroundColor: isDark ? Colors.grey[900] : Colors.grey[200],
         backgroundImage: url.isNotEmpty
             ? NetworkImage(url)
             : const AssetImage('assets/logo.png') as ImageProvider,
@@ -245,7 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(bool isDark) {
     return FutureBuilder<Map<String, int>>(
       future: _userStatsFuture,
       builder: (context, snapshot) {
@@ -254,9 +274,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildStatColumn('Posts', stats['posts'].toString()),
-            _buildStatColumn('Followers', stats['followers'].toString()),
-            _buildStatColumn('Following', stats['following'].toString()),
+            _buildStatColumn('Posts', stats['posts'].toString(), isDark),
+            _buildStatColumn(
+              'Followers',
+              stats['followers'].toString(),
+              isDark,
+            ),
+            _buildStatColumn(
+              'Following',
+              stats['following'].toString(),
+              isDark,
+            ),
           ],
         );
       },
@@ -310,16 +338,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatColumn(String title, String value) {
+  Widget _buildStatColumn(String title, String value, bool isDark) {
     return Expanded(
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),

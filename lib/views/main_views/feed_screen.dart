@@ -15,10 +15,8 @@ class FeedScreen extends StatelessWidget {
     BuildContext context,
   ) async {
     try {
-      // FeedService එක හරහා පෝස්ට් එක මැකීම
       await FeedService().deletePost(postId: postId, postUrl: postUrl);
 
-      // Async gap එකකින් පසු context එක තවමත් පවතීදැයි පරීක්ෂා කිරීම (Best Practice)
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,32 +44,35 @@ class FeedScreen extends StatelessWidget {
     // වත්මන් පරිශීලකයාගේ ID එක ලබා ගැනීම
     final String currentUserId = AuthService().getCurrentUser()?.uid ?? "";
 
+    // 🌓 තේමාව Dark ද නැද්ද යන්න පරීක්ෂා කිරීම
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black, // හෝ ඔබේ theme එකේ පසුබිම් වර්ණය
+      // 🔹 පසුබිම් වර්ණය Theme එකට අනුව ස්වයංක්‍රීයව වෙනස් වේ
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<List<Post>>(
         stream: FeedService().getPostsStream(),
         builder: (context, snapshot) {
-          // දත්ත ලැබෙන තෙක් Loading indicator එකක් පෙන්වීම
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // දෝෂයක් ඇත්නම් එය පෙන්වීම
           if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Error: ${snapshot.error}',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
               ),
             );
           }
 
-          // දත්ත නොමැති නම්
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No posts available.',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.black54,
+                ),
               ),
             );
           }
@@ -86,20 +87,33 @@ class FeedScreen extends StatelessWidget {
 
               return Column(
                 children: [
-                  PostWidget(
-                    post: post,
-                    currentUserId: currentUserId,
-                    onEdit: () {
-                      // Edit කිරීමට අවශ්‍ය logic එක පසුව එක් කළ හැක
-                    },
-                    onDelete: () async {
-                      // මැකීමට පෙර තහවුරු කිරීමක් (Confirmation) ලබා ගැනීම සුදුසුයි
-                      await _deletePost(post.postId, post.postUrl, context);
-                    },
+                  // ✅ Post එකේ වර්ණ පාලනය මෙතනින් සිදු වේ
+                  Theme(
+                    data: Theme.of(context).copyWith(
+                      // Light mode එකේදී අකුරු සහ icons කළු පැහැයට හැරේ
+                      textTheme: Theme.of(context).textTheme.apply(
+                        bodyColor: isDark ? Colors.white : Colors.black,
+                        displayColor: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    child: PostWidget(
+                      post: post,
+                      currentUserId: currentUserId,
+                      onEdit: () {
+                        // Edit logic
+                      },
+                      onDelete: () async {
+                        await _deletePost(post.postId, post.postUrl, context);
+                      },
+                    ),
                   ),
                   Divider(
-                    color: mainWhiteColor.withOpacity(0.1),
-                    thickness: 0.5,
+                    // 🌓 Divider එකේ වර්ණය ලස්සනට පෙනෙන ලෙස සැකසීම
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.05),
+                    thickness: 1,
+                    height: 1,
                   ),
                 ],
               );

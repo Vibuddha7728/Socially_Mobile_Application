@@ -47,31 +47,49 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🌓 Theme එක පරීක්ෂා කිරීම
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final inputBorder = OutlineInputBorder(
       borderSide: Divider.createBorderSide(context),
       borderRadius: BorderRadius.circular(8),
     );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Search Users')),
+      // 🔹 Background එක Theme එකට අනුව මාරු වේ
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Search Users'),
+        // AppBar එකේ අකුරු වල පාට Theme එකට අනුව සැකසීම
+        titleTextStyle: TextStyle(
+          color: isDark ? Colors.white : Colors.black,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              // Me style property eka add kala text eka white karanna
-              style: const TextStyle(color: Colors.white),
+              // ✅ පාට කෙලින්ම දෙනවා වෙනුවට Theme එකට අනුව මාරු වන සේ සැකසුවා
+              style: TextStyle(color: isDark ? Colors.white : Colors.black),
               decoration: InputDecoration(
                 labelText: 'Search',
-                labelStyle: const TextStyle(
-                  color: Colors.white70,
-                ), // Label ekath white walata kitta wenna damma
+                labelStyle: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
                 filled: true,
+                // ✅ Search bar එකේ ඇතුළත වර්ණය Light mode එකේදී අළු පාටට හුරු වේ
+                fillColor: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey[200],
                 border: inputBorder,
                 focusedBorder: inputBorder,
                 enabledBorder: inputBorder,
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
-                  color: mainWhiteColor,
+                  color: isDark ? Colors.white : Colors.black54,
                   size: 20,
                 ),
               ),
@@ -89,8 +107,19 @@ class _SearchScreenState extends State<SearchScreen> {
                         ? NetworkImage(user.imageUrl)
                         : const AssetImage('assets/logo.png') as ImageProvider,
                   ),
-                  title: Text(user.name),
-                  subtitle: Text(user.jobTitle),
+                  // ✅ List එකේ අකුරු වල පාට Theme එකට අනුව මාරු වේ
+                  title: Text(
+                    user.name,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    user.jobTitle,
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
                   onTap: () => _navigateToUserProfile(user),
                 );
               },
