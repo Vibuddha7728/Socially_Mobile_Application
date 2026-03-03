@@ -17,7 +17,7 @@ Explore the interactive interface and social features of Socially:
 |:---:|:---:|:---:|
 | <img src="https://github.com/user-attachments/assets/4293f49b-56a8-4215-95c0-47f221f33046" width="100%"> | <img src="https://github.com/user-attachments/assets/f1d85ae3-310f-4ec1-81b3-3f0b2f7f3082" width="100%"> | <img src="https://github.com/user-attachments/assets/667ca65a-826a-470c-bd05-37a432cd3f09" width="100%"> |
 
-| **Interactions (Likes/Comments)** | **User Profile** | **Followers System** |
+| **Chat Bot** | **User Profile** | **Followers System** |
 |:---:|:---:|:---:|
 | <img src="https://github.com/user-attachments/assets/9d94fd53-4f84-4eda-90a6-0347c7cf30e5" width="100%"> | <img src="https://github.com/user-attachments/assets/4176a3ae-dbb8-45e7-b7d4-2b4f833d742e" width="100%"> | <img src="https://github.com/user-attachments/assets/e579faa9-5963-4c39-a377-af6655cd2633" width="100%"> |
 
