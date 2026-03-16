@@ -4,11 +4,11 @@ import 'package:socially_app/services/auth/auth_service.dart';
 import 'package:socially_app/services/feed/feed_service.dart';
 import 'package:socially_app/utils/constants/colors.dart';
 import 'package:socially_app/widgets/main/feed/post.dart';
+// import 'package:socially_app/screens/comments_screen.dart'; // ✅ මෙය පසුව add කරගන්න
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
 
-  // පෝස්ට් එක මැකීමේ ක්‍රියාවලිය
   Future<void> _deletePost(
     String postId,
     String postUrl,
@@ -16,9 +16,7 @@ class FeedScreen extends StatelessWidget {
   ) async {
     try {
       await FeedService().deletePost(postId: postId, postUrl: postUrl);
-
       if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Post deleted successfully'),
@@ -27,9 +25,7 @@ class FeedScreen extends StatelessWidget {
       );
     } catch (e) {
       debugPrint('Error deleting post: $e');
-
       if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error deleting post'),
@@ -41,14 +37,10 @@ class FeedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // වත්මන් පරිශීලකයාගේ ID එක ලබා ගැනීම
     final String currentUserId = AuthService().getCurrentUser()?.uid ?? "";
-
-    // 🌓 තේමාව Dark ද නැද්ද යන්න පරීක්ෂා කිරීම
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      // 🔹 පසුබිම් වර්ණය Theme එකට අනුව ස්වයංක්‍රීයව වෙනස් වේ
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<List<Post>>(
         stream: FeedService().getPostsStream(),
@@ -87,10 +79,8 @@ class FeedScreen extends StatelessWidget {
 
               return Column(
                 children: [
-                  // ✅ Post එකේ වර්ණ පාලනය මෙතනින් සිදු වේ
                   Theme(
                     data: Theme.of(context).copyWith(
-                      // Light mode එකේදී අකුරු සහ icons කළු පැහැයට හැරේ
                       textTheme: Theme.of(context).textTheme.apply(
                         bodyColor: isDark ? Colors.white : Colors.black,
                         displayColor: isDark ? Colors.white : Colors.black,
@@ -100,15 +90,31 @@ class FeedScreen extends StatelessWidget {
                       post: post,
                       currentUserId: currentUserId,
                       onEdit: () {
-                        // Edit logic
+                        // Edit logic here
                       },
                       onDelete: () async {
                         await _deletePost(post.postId, post.postUrl, context);
                       },
+                      // ✅ Comment Button එක ක්ලික් කළ විට
+                      onComment: () {
+                        // මෙතැනදී ඔබේ Comments Screen එකට Navigate කරන්න
+                        /*
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CommentsScreen(
+                              postId: post.postId,
+                            ),
+                          ),
+                        );
+                        */
+                        debugPrint(
+                          "Navigating to comments for post: ${post.postId}",
+                        );
+                      },
                     ),
                   ),
                   Divider(
-                    // 🌓 Divider එකේ වර්ණය ලස්සනට පෙනෙන ලෙස සැකසීම
                     color: isDark
                         ? Colors.white.withOpacity(0.1)
                         : Colors.black.withOpacity(0.05),

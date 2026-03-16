@@ -47,8 +47,6 @@ class FeedService {
   }
 
   // Fetch the posts as a stream
-
-  //This methode will return a stream of list of posts , a stream is a sequence of asynchronous events ordered in time and the stream will return a list of posts.
   Stream<List<Post>> getPostsStream() {
     return _feedCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -71,7 +69,7 @@ class FeedService {
     }
   }
 
-  //get all posts images form the user
+  // get all posts images form the user
   Future<List<String>> getUserPosts(String userId) async {
     try {
       final userPosts = await _feedCollection
@@ -90,11 +88,7 @@ class FeedService {
     }
   }
 
-  // for each post i want a new collection called postLikes and i want to store the number of likes in that collection
-
-  //create a methode to like a post
-
-  //[ Here the like post methode will take two parameters the post id and the user id and it will add a document to the likes subcollection and update the likes count in the post document.]
+  // create a methode to like a post
   Future<void> likePost({
     required String postId,
     required String userId,
@@ -105,10 +99,8 @@ class FeedService {
           .collection('likes')
           .doc(userId);
 
-      // Add a document to the likes subcollection
       await postLikesRef.set({'likedAt': Timestamp.now()});
 
-      // Update the likes count in the post document
       final postDoc = await _feedCollection.doc(postId).get();
       final post = Post.fromJson(postDoc.data() as Map<String, dynamic>);
       final newLikesCount = post.likes + 1;
@@ -121,7 +113,6 @@ class FeedService {
     }
   }
 
-  //create a methode to unlike a post
   // Unlike a post
   Future<void> unlikePost({
     required String postId,
@@ -133,10 +124,8 @@ class FeedService {
           .collection('likes')
           .doc(userId);
 
-      // Delete the document from the likes subcollection
       await postLikesRef.delete();
 
-      // Update the likes count in the post document
       final postDoc = await _feedCollection.doc(postId).get();
       final post = Post.fromJson(postDoc.data() as Map<String, dynamic>);
       final newLikesCount = post.likes - 1;
@@ -160,7 +149,6 @@ class FeedService {
           .collection('likes')
           .doc(userId);
 
-      // Check if the like document exists
       final doc = await postLikesRef.get();
       return doc.exists;
     } catch (error) {
@@ -180,5 +168,49 @@ class FeedService {
       print('Error getting user posts count: $error');
       return 0;
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // ✅ NEW: POST A COMMENT (මෙම කොටස අලුතින් එක් කරන ලදි)
+  // -----------------------------------------------------------------------
+  Future<void> postComment({
+    required String postId,
+    required String text,
+    required String uid,
+    required String name,
+    required String profilePic,
+  }) async {
+    try {
+      if (text.isNotEmpty) {
+        // අදාළ post එක තුළ අලුත් comments collection එකක් සාදයි
+        final commentRef = _feedCollection
+            .doc(postId)
+            .collection('comments')
+            .doc();
+
+        await commentRef.set({
+          'profilePic': profilePic,
+          'name': name,
+          'uid': uid,
+          'text': text,
+          'commentId': commentRef.id,
+          'datePublished': DateTime.now(),
+        });
+        print('Comment posted successfully');
+      }
+    } catch (error) {
+      print('Error posting comment: $error');
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // ✅ NEW: GET COMMENTS AS A STREAM (Real-time පෙන්වීමට)
+  // -----------------------------------------------------------------------
+  Stream<QuerySnapshot> getCommentsStream(String postId) {
+    return _feedCollection
+        .doc(postId)
+        .collection('comments')
+        .orderBy('datePublished', descending: true)
+        .snapshots();
   }
 }
