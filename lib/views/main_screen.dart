@@ -37,17 +37,22 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: _pages[_currentIndex],
 
-      // 🤖 Help Button එක
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HelpChatScreen()),
-          );
-        },
-        backgroundColor: Colors.orange,
-        child: const Icon(Icons.support_agent, color: Colors.white),
-      ),
+      // 🤖 Help Button එක (Reels screen එකේදී පමණක් හංගා ඇත)
+      // _currentIndex == 3 කියන්නේ Reels tab එකයි.
+      floatingActionButton: _currentIndex == 3
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HelpChatScreen(),
+                  ),
+                );
+              },
+              backgroundColor: Colors.orange,
+              child: const Icon(Icons.support_agent, color: Colors.white),
+            ),
 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

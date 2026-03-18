@@ -14,8 +14,7 @@ class ReelsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      // 🔹 මෙහි තිබූ fixed background color එක අයින් කළා.
-      // දැන් මෙය main.dart එකේ theme එකට අනුව ඉබේම මාරු වේ.
+      // 🔹 Background color එක theme එකට අනුව ඉබේම මාරු වේ.
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       appBar: AppBar(
@@ -34,6 +33,7 @@ class ReelsScreen extends StatelessWidget {
         // AppBar එකේ icons වල වර්ණය වෙනස් කිරීම
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
       ),
+
       body: StreamBuilder<QuerySnapshot>(
         stream: ReelService().getReels(),
         builder: (context, snapshot) {
@@ -84,7 +84,11 @@ class ReelsScreen extends StatelessWidget {
           );
         },
       ),
+
+      // ✅ Plus Button එක (FloatingActionButton)
       floatingActionButton: Container(
+        height: 60,
+        width: 60,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
@@ -102,9 +106,12 @@ class ReelsScreen extends StatelessWidget {
           onPressed: () => _showAddReelModal(context),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: const Icon(Icons.add_rounded, size: 30, color: Colors.white),
+          child: const Icon(Icons.add_rounded, size: 35, color: Colors.white),
         ),
       ),
+
+      // 📍 Button එක දකුණු පැත්තේ (Right Side) ස්ථානගත කිරීමට මෙය භාවිතා කළා.
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
