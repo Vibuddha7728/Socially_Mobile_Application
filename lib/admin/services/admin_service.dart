@@ -1,5 +1,5 @@
-import 'dart:convert'; // JSON දත්ත හැසිරවීමට
-import 'package:http/http.dart' as http; // HTTP ඉල්ලීම් (Requests) යැවීමට
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +8,12 @@ import 'package:rxdart/rxdart.dart';
 class AdminService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // SMS API Configurations
+  static const String _smsApiKey =
+      '413|0kkQbVo9Sw7EmjaIKeejhRDHdtHImBOfesPIa10M';
+  static const String _smsApiUrl =
+      'https://dashboard.smsapi.lk/api/v3/sms/send';
 
   // 1. Admin ද කියලා පරීක්ෂා කිරීම
   Future<bool> isAdmin() async {
@@ -39,7 +45,7 @@ class AdminService {
     ).onErrorReturn({'users': 0, 'posts': 0, 'reels': 0, 'reports': 0});
   }
 
-  // 3. Analytics (Graphs/Charts)
+  // 3. Analytics
   Stream<Map<String, dynamic>> getAnalyticsStats() {
     return _db.collection('users').snapshots().map((userSnap) {
       int totalUsers = userSnap.docs.length;
@@ -135,7 +141,7 @@ class AdminService {
     }
   }
 
-  // 10. Broadcast පණිවුඩය (Inbox එකට)
+  // 10. Broadcast පණිවුඩය (Inbox)
   Future<void> sendBroadcastToInboxes({
     required String title,
     required String message,
@@ -164,31 +170,110 @@ class AdminService {
     }
   }
 
-  // 11. අලුතින් එක් කළ Push Notification Function එක
-  Future<void> sendPushNotification(String title, String body) async {
-    try {
-      // වැදගත්: Firebase Console එකෙන් ලබාගත් SERVER_KEY එක මෙතැනට ඇතුළත් කරන්න
-      const String serverKey = 'YOUR_SERVER_KEY_HERE';
+  // Phone Formatting
+  String _formatPhone(String phone) {
+    phone = phone
+        .trim()
+        .replaceAll(' ', '')
+        .replaceAll('-', '')
+        .replaceAll('+', '');
+    if (phone.startsWith('94')) return phone;
+    if (phone.startsWith('0')) return '94${phone.substring(1)}';
+    return '94$phone';
+  }
 
-      await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
-        headers: <String, String>{
+  bool _isValidPhone(String phone) {
+    return RegExp(r'^94\d{9}$').hasMatch(phone);
+  }
+
+  // 11. Single SMS Core Function
+  Future<void> sendSms({required String phone, required String message}) async {
+    try {
+      final String formattedPhone = _formatPhone(phone);
+      final response = await http.post(
+        Uri.parse(_smsApiUrl),
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'key=$serverKey',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $_smsApiKey',
         },
         body: jsonEncode({
-          'notification': {
-            'title': 'Socially Admin: $title',
-            'body': body,
-            'sound': 'default',
-          },
-          'priority': 'high',
-          'to': '/topics/all_users',
+          'recipient': formattedPhone,
+          'sender_id': 'NotifyDEMO',
+          'type': 'plain',
+          'message': message,
         }),
       );
-      print("Push Notification Sent Successfully!");
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception("SMS failed: ${response.body}");
+      }
     } catch (e) {
-      print("Push Error: $e");
+      print("SMS Error: $e");
+      rethrow;
+    }
+  }
+
+  // 12. Single User කෙනෙකුට SMS යැවීම (Firestore එකෙන් number එක අරන්)
+  Future<void> sendSmsToSingleUser({
+    required String userId,
+    required String message,
+  }) async {
+    try {
+      final userDoc = await _db.collection('users').doc(userId).get();
+      if (!userDoc.exists) throw Exception("User not found");
+
+      final String phone = (userDoc.data()?['phone'] ?? '').toString();
+      if (phone.isEmpty) throw Exception("User phone number not found");
+
+      await sendSms(phone: phone, message: message);
+    } catch (e) {
+      print("Single User SMS Error: $e");
+      rethrow;
+    }
+  }
+
+  // 13. සියලුම Users ලාට SMS යැවීම
+  Future<void> sendSmsToAllUsers({required String message}) async {
+    try {
+      final usersSnapshot = await _db.collection('users').get();
+      List<String> validRecipients = [];
+
+      for (var userDoc in usersSnapshot.docs) {
+        final data = userDoc.data();
+        final String rawPhone = (data['phone'] ?? '').toString();
+        if (rawPhone.isNotEmpty) {
+          final String formatted = _formatPhone(rawPhone);
+          if (_isValidPhone(formatted)) {
+            validRecipients.add(formatted);
+          }
+        }
+      }
+
+      if (validRecipients.isEmpty)
+        throw Exception("No valid phone numbers found");
+
+      final response = await http.post(
+        Uri.parse(_smsApiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $_smsApiKey',
+        },
+        body: jsonEncode({
+          'recipient': validRecipients.join(','),
+          'sender_id': 'SMSAPI Demo',
+          'type': 'plain',
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception("Bulk SMS failed: ${response.body}");
+      }
+    } catch (e) {
+      print("Bulk SMS Error: $e");
+      rethrow;
     }
   }
 }

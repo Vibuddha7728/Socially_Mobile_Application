@@ -28,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _ageController = TextEditingController(); // Added age controller
   final _jobTitleController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -55,6 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     _controller.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _ageController.dispose();
     _jobTitleController.dispose();
     _passwordController.dispose();
@@ -104,6 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           userId: uid,
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
           age: int.tryParse(_ageController.text.trim()) ?? 0,
           jobTitle: _jobTitleController.text.trim(),
           imageUrl: imageUrl,
@@ -249,6 +252,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                           'Email Address',
                           Icons.alternate_email_rounded,
                           isEmail: true,
+                        ),
+                        const SizedBox(height: 18),
+                        _buildInputField(
+                          _phoneController,
+                          'Phone Number',
+                          Icons.phone_rounded,
+                          isPhone: true,
                         ),
                         const SizedBox(height: 18),
 
@@ -442,6 +452,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     bool isEmail = false,
     bool isConfirm = false,
     bool isNumber = false,
+    bool isPhone = false,
   }) {
     return ReusableInput(
       controller: controller,
@@ -452,9 +463,13 @@ class _RegisterScreenState extends State<RegisterScreen>
         if (v == null || v.isEmpty) return 'Required';
         if (isEmail && !v.contains('@')) return 'Invalid Email';
         if (isPass && v.length < 6) return 'Password too short';
-        if (isConfirm && v != _passwordController.text)
+        if (isConfirm && v != _passwordController.text) {
           return 'Passwords do not match';
+        }
         if (isNumber && int.tryParse(v) == null) return 'Enter a valid number';
+        if (isPhone && !RegExp(r'^\d{10,12}$').hasMatch(v)) {
+          return 'Enter a valid phone number';
+        }
         return null;
       },
     );

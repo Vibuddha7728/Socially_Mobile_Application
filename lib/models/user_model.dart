@@ -4,6 +4,7 @@ class UserModel {
   final String userId;
   final String name;
   final String email;
+  final String phone;
   final int age;
   final String jobTitle;
   final String imageUrl;
@@ -19,6 +20,7 @@ class UserModel {
     required this.userId,
     required this.name,
     required this.email,
+    required this.phone,
     required this.age,
     required this.jobTitle,
     required this.imageUrl,
@@ -37,6 +39,7 @@ class UserModel {
       'userId': userId,
       'name': name,
       'email': email,
+      'phone': phone,
       'age': age,
       'jobTitle': jobTitle,
       'imageUrl': imageUrl,
@@ -56,6 +59,7 @@ class UserModel {
       userId: data['userId'] ?? '',
       name: data['name'] ?? '',
       email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
       age: data['age'] is int
           ? data['age']
           : int.tryParse(data['age']?.toString() ?? '0') ?? 0,

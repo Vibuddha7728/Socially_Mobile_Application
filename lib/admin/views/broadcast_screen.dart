@@ -31,21 +31,20 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
       String title = _titleController.text.trim();
       String message = _messageController.text.trim();
 
-      // 1. AdminService එකේ ඇති Firestore එකට දත්ත යවන function එක call කිරීම
+      // 1. App inbox notification එකට save කිරීම
       await _adminService.sendBroadcastToInboxes(
         title: title,
         message: message,
       );
 
-      // 2. අලුතින් එක් කළ කොටස: ෆෝන් එකේ උඩින් Notification එක යැවීම
-      // මෙම function එක අපි AdminService එකට මීට පෙර එකතු කළා
-      await _adminService.sendPushNotification(title, message);
+      // 2. සියලු users ලාට SMS යැවීම
+      await _adminService.sendSmsToAllUsers(message: message);
 
       if (mounted) {
         _titleController.clear();
         _messageController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Broadcast & Push Sent Successfully!")),
+          const SnackBar(content: Text("Broadcast & SMS Sent Successfully!")),
         );
         Navigator.pop(context); // යැවූ පසු නැවත Dashboard එකට යාමට
       }
@@ -58,6 +57,13 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _messageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -120,7 +126,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                     ),
                     onPressed: _handleSend,
                     child: const Text(
-                      "SEND BROADCAST & PUSH",
+                      "SEND BROADCAST & SMS",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart'; // 🔹 එකතු කරන ලදී
+import 'package:provider/provider.dart';
 import 'package:socially_app/models/user_model.dart';
 import 'package:socially_app/services/auth/auth_service.dart';
 import 'package:socially_app/services/feed/feed_service.dart';
@@ -10,7 +10,7 @@ import 'package:socially_app/widgets/reusable/custom_button.dart';
 import 'package:socially_app/admin/services/admin_service.dart';
 import 'package:socially_app/admin/screens/admin_dashboard.dart';
 import 'package:socially_app/views/main_views/notifications_screen.dart';
-import 'package:socially_app/providers/theme_provider.dart'; // 🔹 එකතු කරන ලදී
+import 'package:socially_app/providers/theme_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -37,6 +37,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _currentUserId = AuthService().getCurrentUser()?.uid ?? '';
     _userFuture = _fetchUserDetails();
     _userStatsFuture = _fetchUserStats();
+  }
+
+  int _safeCount(int? value) {
+    if (value == null || value < 0) return 0;
+    return value;
   }
 
   Future<UserModel?> _fetchUserDetails() async {
@@ -71,9 +76,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       return {
-        'posts': postsCount,
-        'followers': followersCount,
-        'following': followingCount,
+        'posts': _safeCount(postsCount),
+        'followers': _safeCount(followersCount),
+        'following': _safeCount(followingCount),
       };
     } catch (error) {
       return {'posts': 0, 'followers': 0, 'following': 0};
@@ -89,12 +94,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 ThemeProvider එක ලබා ගැනීම
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
-      // 🌓 තේමාව අනුව පසුබිම් වර්ණය වෙනස් වේ
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -108,7 +111,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         actions: [
-          // Notification Bell
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
@@ -182,8 +184,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
           ),
-
-          // 🌓 Theme Switch Button (Settings Icon එක වෙනුවට හෝ එය සමඟ)
           IconButton(
             icon: Icon(
               isDark ? Icons.light_mode : Icons.dark_mode,
@@ -271,20 +271,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, snapshot) {
         final stats =
             snapshot.data ?? {'posts': 0, 'followers': 0, 'following': 0};
+
+        final posts = _safeCount(stats['posts']);
+        final followers = _safeCount(stats['followers']);
+        final following = _safeCount(stats['following']);
+
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildStatColumn('Posts', stats['posts'].toString(), isDark),
-            _buildStatColumn(
-              'Followers',
-              stats['followers'].toString(),
-              isDark,
-            ),
-            _buildStatColumn(
-              'Following',
-              stats['following'].toString(),
-              isDark,
-            ),
+            _buildStatColumn('Posts', posts.toString(), isDark),
+            _buildStatColumn('Followers', followers.toString(), isDark),
+            _buildStatColumn('Following', following.toString(), isDark),
           ],
         );
       },
